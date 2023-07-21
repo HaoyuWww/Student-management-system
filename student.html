@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>学生管理系统</title>
+    <style>
+        /* 界面样式 */
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f2f2f2;
+            margin: 0;
+            padding: 0;
+        }
+
+        .header {
+            background-color: #333;
+            color: #fff;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+
+
+        .add-form {
+            background-color: #fff;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 10px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 5px;
+        }
+
+        .form-group .radio-label {
+            display: inline-block;
+            margin-right: 10px;
+        }
+
+        .form-group .radio-input {
+            display: inline-block;
+            vertical-align: middle;
+        }
+
+        .form-group button {
+            margin-top: 10px;
+        }
+
+        .actions {
+            text-align: right;
+        }
+
+        .actions button {
+            margin-left: 5px;
+        }
+    </style>
+</head>
+<body>
+<div class="header">
+    <h1>学生管理系统</h1>
+</div>
+
+<div class="container">
+    <div class="add-form">
+        <h2>添加学生</h2>
+
+        <div class="form-group">
+            <label for="studentId">学号：</label>
+            <input type="text" id="studentId" name="studentId" required>
+        </div>
+
+        <div class="form-group">
+            <label for="studentName">姓名：</label>
+            <input type="text" id="studentName" name="studentName" pattern="[\u4e00-\u9fa5A-Za-z0-9]+" required>
+        </div>
+
+        <div class="form-group">
+            <label for="studentDOB">出生日期：</label>
+            <input type="date" id="studentDOB" name="studentDOB" max="<?=date('Y-m-d')?>" required>
+        </div>
+
+        <div class="form-group">
+            <label>性别：</label>
+            <label class="radio-label">
+                <input type="radio" name="studentGender" value="male" required> 男
+            </label>
+            <label class="radio-label">
+                <input type="radio" name="studentGender" value="female" required> 女
+            </label>
+            <label class="radio-label">
+                <input type="radio" name="studentGender" value="other" required> 其他
+            </label>
+        </div>
+
+        <div class="actions">
+            <button onclick="addStudent()">添加</button>
+        </div>
+    </div>
+
+    <script>
+        const editingStudentId = null; // 保存正在编辑的学生的学号
+
+        function addStudent() {
+            //获取表单数据
+            const studentId = document.getElementById('studentId').value;
+            const studentName = document.getElementById('studentName').value;
+            const studentDOB = document.getElementById('studentDOB').value;
+            const studentGender = document.querySelector('input[name="studentGender"]:checked').value;
+
+            //验证日期是否在今天
+            const today = new Date();
+            const selectedDOB = new Date(studentDOB);
+            if (selectedDOB > today) {
+                alert('出生日期不能晚于今天');
+                return;
+            }
+
+            const existingRow = document.querySelector('tr[data-student-id="' + studentId + '"]');
+
+            if (existingRow) {
+                // 学号已存在，提示错误信息
+                alert('学号已存在，请输入其他学号');
+            } else {
+                // 学号不存在，添加新学生
+                const student = {
+                    id: studentId,
+                    name: studentName,
+                    dob: studentDOB,
+                    gender: studentGender
+                };
+
+
+                // 调用后端API保存学生数据
+                console.log('保存学生信息：', student);
+                saveStudent(student);
+
+                // 清空表单
+                document.getElementById('studentId').value = '';
+                document.getElementById('studentName').value = '';
+                document.getElementById('studentDOB').value = '';
+                document.querySelector('input[name="studentGender"]').checked = false;
+            }
+        }
+
+        function saveStudent(student) {
+            // 将英文性别映射为中文性别
+            if (student.gender === 'male') {
+                student.gender = '男';
+            } else if (student.gender === 'female') {
+                student.gender = '女';
+            } else {
+                student.gender = '其他';
+            }
+            // 将学生数据转换为JSON字符串
+            const jsonData = JSON.stringify(student);
+
+            // 使用fetch发送POST请求
+            fetch('http://localhost:8080/students', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: jsonData
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('保存学生失败');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('学生保存成功：', data);
+                    // 在此可以做一些成功保存后的处理
+                })
+                .catch(error => {
+                    console.error('保存学生出错：', error);
+                    // 在此可以做一些错误处理
+                });
+        }
+    </script>
+</div>
+</body>
+</html>
+
